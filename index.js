@@ -18,7 +18,12 @@ const path = require('path');
 const {
   removePackage,
   installPackage,
+  installKnownPackages,
 } = require('./lib');
+const cp = require('child_process');
+const { promisify } = require('util');
+
+const exec = promisify(cp.exec.bind(cp));
 
 if (process.argv.length < 3) {
   console.error('Please provide at least one argument!');
@@ -56,7 +61,13 @@ const packages = config.packages || {};
 
 (async () => {
   if (cmd & CMD_REMOVE) {
-
+    const packageName = process.argv[3];
+    const removedPackage = await removePackage(projectDirectory, packageName);
+    if (removedPackage) {
+      console.log(`Removed '${packageName}' from loin packages.`);
+    } else {
+      console.log(`Cannot find package '${packageName}'.`);
+    }
   }
   if (cmd & CMD_INSTALL) {
     if (process.argv[3]) {
@@ -68,6 +79,10 @@ const packages = config.packages || {};
       console.log('Starting installation...');
       const packageName = await installPackage(projectDirectory, packagePath);
       console.log(`Successfully installed package '${packageName}'.`);
+    } else {
+      console.log('Installing known packages...');
+      const packageNames = await installKnownPackages(projectDirectory);
+      console.log('The following packages were installed: ' + packageNames.join(', '));
     }
   }
 })();

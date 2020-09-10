@@ -24,8 +24,12 @@ function copyFilter(src, dest) {
   return !src.includes('node_modules');
 }
 
+/**
+ * 
+ * @param {string} projectPath 
+ * @param {string} relativePackagePath 
+ */
 async function installPackage(projectPath, relativePackagePath) {
-
   const packagePath = path.join(projectPath, relativePackagePath);
   const packPath = path.join(packagePath, 'package.json');
   const packageName =
@@ -50,12 +54,43 @@ async function installPackage(projectPath, relativePackagePath) {
   return packageName;
 }
 
-async function removePackage(a) {
+/**
+ * 
+ * @param {string} projectPath 
+ * @param {string} packageName 
+ */
+async function removePackage(projectPath, packageName) {
+  const loinConfigPath = path.join(projectPath, '.loin');
+  const loinConfig = await fs.promises.readFile(loinConfigPath).then(x => JSON.parse(x.toString('utf-8')));
+  if (!loinConfig.packages[packageName]) {
+    return false;
+  }
+  await fs.promises.unlink(path.join(projectPath, 'loin_modules', packageName));
+  delete loinConfig.packages[packageName];
+  await fs.promises.writeFile(loinConfigPath, JSON.stringify(loinConfig, undefined, 2));
+  return true;
+}
 
+/**
+ * 
+ * @param {string} projectPath 
+ */
+async function installKnownPackages(projectPath) {
+  const loinConfigPath = path.join(projectPath, '.loin');
+  const loinConfig = await fs.promises.readFile(loinConfigPath).then(x => JSON.parse(x.toString('utf-8')));
+  if (!loinConfig.packages) {
+    return [];
+  }
+  for (const packageName in loinConfig.packages) {
+    const packagePath = loinConfig.packages[packageName];
+    await installPackage(projectPath, packagePath);
+  }
+  return Object.keys(loinConfig.packages);
 }
 
 
 module.exports = {
   installPackage,
   removePackage,
+  installKnownPackages,
 };
