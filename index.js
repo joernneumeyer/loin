@@ -25,7 +25,7 @@ if (process.argv.length < 3) {
   return 1;
 }
 
-const projectDirectory = process.argv[1];
+const projectDirectory = process.env.PWD;
 const projectConfigPath = path.join(projectDirectory, '.loin');
 
 const CMD_INSTALL = 0x00000001;
